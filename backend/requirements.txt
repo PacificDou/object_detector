@@ -1,0 +1,3 @@
+ultralytics==8.0.128
+Flask==2.2.2
+Flask-Cors==3.0.10

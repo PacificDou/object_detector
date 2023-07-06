@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Object Detector (Ultralytics YOLOv8)</title>
+    </head>
+    <body>
+        <p>Please select the image, and click the Detect button</p>
+
+        <input type="file" id="targetImgSelector" accept=".jpg, .jpeg, .png" />
+        <br><br>
+        <button id="btnDetect">Detect</button>
+        <br><br>
+        <img id="targetImgThumbnail" width="" height="180" src=""/>
+        <br><br>
+
+        <div id="divResult">
+            <p id="pResult" style="float:left; margin-right:10px;">
+                <label id="lblResult"></label><br>
+                <canvas id="canvasResult" width="" height=""></canvas>
+            </p>
+        </div>
+        <br><br>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+        var host;
+        var targetImgHandler = null;
+        var targetImgBytes = null;
+        var maxImgBytes = 10 * 1024 * 1024;
+        var bboxColors = ["rgba(255, 0, 0, 128)", "rgba(0, 255, 0, 128)", "rgba(0, 0, 255, 128)"];
+
+        $(function() {
+            // init host and port
+            host = window.location;
+            console.log(host);
+        });
+
+        // show thumbnail when select a new image
+        $('#targetImgSelector').change(function(event){
+            targetImgHandler = event.target.files[0];
+
+            if (targetImgHandler.size > maxImgBytes) {
+                alert("Image is too large!  max: " + maxImgBytes + " bytes");
+                return;
+            }
+
+            // reference: https://medium.com/a-layman/send-images-to-the-flask-server-and-show-images-on-the-browser-bcdfb81d16cd
+            var fileReader = new FileReader();
+            fileReader.readAsArrayBuffer(targetImgHandler);
+            fileReader.onload = () => {
+                targetImgBytes = fileReader.result;
+
+                unitArr = new Uint8Array(targetImgBytes);
+                myString = "";
+                for (var i=0; i<unitArr.byteLength; i++) {
+                  myString += String.fromCharCode(unitArr[i]);
+                }
+                imgSrc = "data:image/jpeg;base64," + btoa(myString);
+
+                $("#targetImgThumbnail").attr("src", imgSrc);
+                //$("#targetImgThumbnail").attr("width", "");
+                //$("#targetImgThumbnail").attr("height", "");
+            }
+        });
+
+        // send object detection request to server
+        $('#btnDetect').click(function(){
+            if (targetImgHandler == null) {
+                alert("Please select the image!");
+                return;
+            }
+
+            //threshold = $("#threshold").val();
+            //maxReturn = $("#maxReturn").val();
+
+            var formData = new FormData();
+            formData.append("image", targetImgHandler);
+
+            $.ajax({
+                url : host + "api/det",
+                type : "POST",
+                data : formData,
+                // both 'contentType' and 'processData' parameters are
+                // required so that all data are correctly transferred
+                contentType : false,
+                processData : false
+            }).done(function(boxes){
+
+                console.log(boxes.length + " objects detected in " + targetImgHandler.name);
+                console.log(boxes);
+
+                // show bbox
+                let canvas = $("#canvasResult")[0];
+                let context = canvas.getContext("2d");
+                var img = new Image();
+                img.onload = function() {
+                    // draw frame
+                    canvas.height = img.height;
+                    canvas.width = img.width;
+                    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // draw bbox
+                    for (var i = 0; i < boxes.length; ++i) {
+                        box = boxes[i];
+                        color = bboxColors[box.cls % bboxColors.length];
+                        context.lineWidth = 5;
+                        context.strokeStyle = color;
+                        x = box.xyxy[0];
+                        y = box.xyxy[1];
+                        w = box.xyxy[2] - box.xyxy[0];
+                        h = box.xyxy[3] - box.xyxy[1];
+                        context.strokeRect(x, y, w, h);
+
+                        // show caption
+                        context.font = "20px arial";
+                        context.lineWidth = 2;
+                        var text = box.name + " " + box.conf.toFixed(3);
+                        context.fillStyle = color;
+                        context.fillRect(x - 3, y - 27, context.measureText(text).width + 5, 30);
+                        context.strokeStyle = 'rgba(255, 255, 255, 255)';
+                        context.strokeText(text, x, y - 10);
+                    }
+                }
+
+                // show image
+                unitArr = new Uint8Array(targetImgBytes);
+                myString = "";
+                for (var i=0; i<unitArr.byteLength; i++) {
+                  myString += String.fromCharCode(unitArr[i]);
+                }
+                imgSrc = "data:image/jpeg;base64," + btoa(myString);
+                img.src = imgSrc;
+
+            }).fail(function(response){
+                alert("Error!   " + response.statusText + " (" + response.status + ")");
+            });
+        });
+    </script>
+    </body>
+</html>
+
