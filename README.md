@@ -26,14 +26,20 @@ This simple app illustrates how to build a object detection web service.
 
 ### Installation guide
 
-1. Local test (better to run in a new virtual env)
+1. Local test (Python3 virtual env)
 ```sh
-cd backend
-pip install -r requirements.txt
-python app.py
+cd backend && pip install -r requirements.txt && python app.py
 ```
 
-2. GCP App Engine
+2. Local test (docker container)
+```sh
+cd backend && docker build -t object_detector . && docker run -d -p 11280:11280 --name object_detector object_detector
+
+# on mac, use the following command instead (add option --platform linux/amd64)
+cd backend && docker build --platform linux/amd64 -t object_detector . && docker run --platform linux/amd64 -d -p 11280:11280 --name object_detector object_detector
+```
+
+3. GCP App Engine
 ```sh
 gcloud app deploy
 ```
