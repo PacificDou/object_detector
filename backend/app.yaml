@@ -1,9 +1,8 @@
-runtime: python310
+runtime: python
+env: flex
 
-instance_class: F1
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "3.10"
 
-env_variables:
-  PORT: 11280
-
-automatic_scaling:
-  max_instances: 1
+entrypoint: gunicorn -b :11280 app:app

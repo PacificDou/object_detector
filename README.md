@@ -39,7 +39,7 @@ cd backend && docker build -t object_detector . && docker run -d -p 11280:11280 
 cd backend && docker build --platform linux/amd64 -t object_detector . && docker run --platform linux/amd64 -d -p 11280:11280 --name object_detector object_detector
 ```
 
-3. GCP App Engine
+3. GCP App Engine (run in cloud shell) <-- currently not working, timeout when build the runtime image
 ```sh
 gcloud app deploy
 ```
