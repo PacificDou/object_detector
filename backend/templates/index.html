@@ -36,6 +36,16 @@
             console.log(host);
         });
 
+        function convertImgBytesToStr(imgBytes) {
+            unitArr = new Uint8Array(imgBytes);
+            myString = "";
+            for (var i=0; i<unitArr.byteLength; i++) {
+                myString += String.fromCharCode(unitArr[i]);
+            }
+            imgStr = "data:image/jpeg;base64," + btoa(myString);
+            return imgStr;
+        }
+
         // show thumbnail when select a new image
         $('#targetImgSelector').change(function(event){
             targetImgHandler = event.target.files[0];
@@ -50,15 +60,7 @@
             fileReader.readAsArrayBuffer(targetImgHandler);
             fileReader.onload = () => {
                 targetImgBytes = fileReader.result;
-
-                unitArr = new Uint8Array(targetImgBytes);
-                myString = "";
-                for (var i=0; i<unitArr.byteLength; i++) {
-                  myString += String.fromCharCode(unitArr[i]);
-                }
-                imgSrc = "data:image/jpeg;base64," + btoa(myString);
-
-                $("#targetImgThumbnail").attr("src", imgSrc);
+                $("#targetImgThumbnail").attr("src", convertImgBytesToStr(targetImgBytes));
                 //$("#targetImgThumbnail").attr("width", "");
                 //$("#targetImgThumbnail").attr("height", "");
             }
@@ -124,13 +126,7 @@
                 }
 
                 // show image
-                unitArr = new Uint8Array(targetImgBytes);
-                myString = "";
-                for (var i=0; i<unitArr.byteLength; i++) {
-                  myString += String.fromCharCode(unitArr[i]);
-                }
-                imgSrc = "data:image/jpeg;base64," + btoa(myString);
-                img.src = imgSrc;
+                img.src = convertImgBytesToStr(targetImgBytes);
 
             }).fail(function(response){
                 alert("Error!   " + response.statusText + " (" + response.status + ")");
