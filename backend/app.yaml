@@ -1,8 +1,0 @@
-runtime: python
-env: flex
-
-runtime_config:
-  operating_system: "ubuntu22"
-  runtime_version: "3.10"
-
-entrypoint: gunicorn -b :11280 app:app
