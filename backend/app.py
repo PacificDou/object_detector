@@ -70,5 +70,5 @@ def get_detections():
 if __name__ == "__main__": 
     # CAUTION: initialization of resources should be not put here (except the global variable app)
     # because when gunicorn invokes this script, the __name__ will NOT be __main__
+    # ref: https://stackoverflow.com/questions/60332174/gcp-if-name-main-not-working
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 11280)), debug=False)
-
