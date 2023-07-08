@@ -33,7 +33,7 @@ def get_detections():
         img_bytes = request.files.get('image').read()
         img_np = np.frombuffer(img_bytes, dtype=np.uint8)
         img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
-        logging.info("image size: " + str(img.shape))
+        logging.info("input image size: " + str(img.shape))
     except:
         logging.error("Error happened when reading image!")
         traceback.print_exc()
@@ -45,7 +45,7 @@ def get_detections():
     except:
         logging.error("Error happened during prediction!")
         traceback.print_exc()
-        return "Prediction server error!", 500
+        return "Prediction error!", 500
 
     # step 3: format output
     ret = []
@@ -62,7 +62,7 @@ def get_detections():
     except:
         logging.error("Error happened when prepare output!")
         traceback.print_exc()
-        return "Internal server error!", 500
+        return "Internal error!", 500
 
     return ret
 
