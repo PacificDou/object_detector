@@ -5,6 +5,8 @@ import time
 import numpy as np
 import cv2
 from ultralytics import YOLO
+import os
+import logging
 
 
 app = Flask(__name__)
@@ -12,8 +14,11 @@ app = Flask(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-# YOLOv8 model
-model = None
+# set logging level
+logging.basicConfig(level=logging.DEBUG)
+
+# load YOLOv8 model
+model = YOLO('yolov8m.pt')  # load pretrained YOLOv8 model
 
 
 @app.route("/", methods=["GET"])
@@ -28,8 +33,9 @@ def get_detections():
         img_bytes = request.files.get('image').read()
         img_np = np.frombuffer(img_bytes, dtype=np.uint8)
         img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+        logging.info("image size: " + str(img.shape))
     except:
-        print("Error happened when reading image!")
+        logging.error("Error happened when reading image!")
         traceback.print_exc()
         return "Unsupported image!", 400
 
@@ -37,7 +43,7 @@ def get_detections():
     try:
         results = model(img)
     except:
-        print("Error happened during prediction!")
+        logging.error("Error happened during prediction!")
         traceback.print_exc()
         return "Prediction server error!", 500
 
@@ -52,19 +58,17 @@ def get_detections():
             conf = float(box.conf[0])
             name = cls_names[int(box.cls[0])]
             ret.append({"xyxy": xyxy, "cls": cls, "conf": conf, "name": name})
+        logging.info("{} objects detected".format(len(ret)))
     except:
-        print("Error happened when prepare output!")
+        logging.error("Error happened when prepare output!")
         traceback.print_exc()
         return "Internal server error!", 500
 
     return ret
 
 
-if __name__ == "__main__":
-
-    # load YOLOv8 model
-    model = YOLO('yolov8m.pt')  # load pretrained YOLOv8 model
-
-    app.run(host='0.0.0.0', port=11280, debug=False)
-
+if __name__ == "__main__": 
+    # CAUTION: initialization of resources should be not put here (except the global variable app)
+    # because when gunicorn invokes this script, the __name__ will NOT be __main__
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 11280)), debug=False)
 
