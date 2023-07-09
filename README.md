@@ -41,6 +41,26 @@ cd backend && docker build --platform linux/amd64 -t object_detector . && docker
 
 3. GCP Cloud Run
 ```sh
-cd backend && gcloud run deploy object-detector --port 11280 --source .
+cd backend && gcloud run deploy object-detector --port 11280 --cpu 2 --memory 4G --region europe-west6 --max-instances=1 --source .
+```
+
+4. Google Kubernetes Engine
+```sh
+cd backend
+PROJECT_ID=$(gcloud config get-value project)
+COMMIT_SHA="$(git rev-parse --short=7 HEAD)"
+
+# build a container image on Artifact Registry
+gcloud artifacts repositories create my-repository --repository-format=docker --location=europe-west6
+gcloud builds submit --tag="europe-west6-docker.pkg.dev/${PROJECT_ID}/my-repository/object-detector:${COMMIT_SHA}" .
+
+# create a Kubernet cluster and connect to it
+gcloud container clusters create-auto mycluster --region europe-west6
+gcloud container clusters get-credentials mycluster --region europe-west6
+
+# deploy the built container
+sed -i -e "s/\$PROJECT_ID/$PROJECT_ID/g" gke.yaml
+sed -i -e "s/\$COMMIT_SHA/$COMMIT_SHA/g" gke.yaml
+kubectl apply -f gke.yaml
 ```
 

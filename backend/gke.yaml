@@ -1,0 +1,72 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "object-detector"
+  namespace: "default"
+  labels:
+    app: "object-detector"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "object-detector"
+  template:
+    metadata:
+      labels:
+        app: "object-detector"
+    spec:
+      containers:
+      - name: "object-detector"
+        image: "europe-west6-docker.pkg.dev/$PROJECT_ID/my-repository/object-detector:$COMMIT_SHA"
+        env:
+        - name: "PORT"
+          value: "11280"
+        resources:
+          requests:
+            cpu: 500m
+            ephemeral-storage: 10Gi
+            memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app: object-detector
+  name: object-detector-service
+  namespace: default
+spec:
+  allocateLoadBalancerNodePorts: true
+  ports:
+  - nodePort: 30100
+    port: 80
+    protocol: TCP
+    targetPort: 11280
+  selector:
+    app: object-detector
+  type: LoadBalancer
+---
+apiVersion: "autoscaling/v2"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "object-detector-hpa-ukfk"
+  namespace: "default"
+  labels:
+    app: "object-detector"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "object-detector"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+  - type: "Resource"
+    resource:
+      name: "cpu"
+      target:
+        type: "Utilization"
+        averageUtilization: 80
